@@ -12,7 +12,7 @@ let fizzbuzz := func (n) {
 
 let fizzbuzzTo := func (max) {
     for (let i = 0; i < max; i := i + 1) {
-        fizbuzz (i);
+        fizzbuzz (i);
     }
 };
 
