@@ -1,0 +1,13 @@
+let Point := struct (x, y);
+
+let point_eq := func (pt1, pt2) {
+    return pt1:x = pt2:x
+        && pt1:y = pt2:y;
+};
+
+let origin := Point (0, 0);
+let a := Point (3, 5);
+let a2 := Point (3, 5);
+
+print (point_eq (origin, a)); # Expect false
+print (point_eq (a, a2)); # Expect true
