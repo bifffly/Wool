@@ -24,7 +24,7 @@ static int simpleInstruction(const char* name, int offset) {
 }
 
 int debugInstruction(Chunk* chunk, int offset) {
-    printf("%d: ", offset);
+    printf("(%d) %d: ", chunk->lines[offset], offset);
 
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
