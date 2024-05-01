@@ -6,9 +6,10 @@ void initChunk(Chunk* chunk) {
     chunk->count = 0;
     chunk->capacity = 0;
     chunk->code = NULL;
+    initValueArray(&chunk->consts);
 }
 
-void writeChunk(Chunk* chunk, uint8_t byte) {
+void writeByteToChunk(Chunk* chunk, uint8_t byte) {
     if (chunk->capacity < chunk->count + 1) {
         int oldCapacity = chunk->capacity;
         chunk->capacity = GROW_CAPACITY(oldCapacity);
@@ -19,7 +20,13 @@ void writeChunk(Chunk* chunk, uint8_t byte) {
     chunk->count++;
 }
 
+int writeValueToChunk(Chunk* chunk, Value value) {
+    writeValueArray(&chunk->consts, value);
+    return chunk->consts.count - 1;
+}
+
 void freeChunk(Chunk* chunk) {
     FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
+    freeValueArray(&chunk->consts);
     initChunk(chunk);
 }
