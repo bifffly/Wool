@@ -1,0 +1,19 @@
+let fizzbuzz := func (n) {
+    if (n % 15 = 0) {
+        print ('fizzbuzz');
+    } elif (n % 5 = 0) {
+        print ('buzz');
+    } elif (n % 3 = 0) {
+        print ('fizz');
+    } else {
+        print (n);
+    }
+};
+
+let fizzbuzzTo := func (max) {
+    for (let i = 0; i < max; i := i + 1) {
+        fizbuzz (i);
+    }
+};
+
+fizzbuzzTo (100);
