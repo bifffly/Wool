@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.27)
+project(Wool C)
+
+set(CMAKE_C_STANDARD 99)
+
+add_executable(wool
+        src/main.c)
