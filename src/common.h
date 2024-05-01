@@ -5,4 +5,4 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#endif //WOOL_COMMON_H
+#endif

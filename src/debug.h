@@ -6,4 +6,4 @@
 void debugChunk(Chunk* chunk, const char* name);
 int debugInstruction(Chunk* chunk, int offset);
 
-#endif //WOOL_DEBUG_H
+#endif

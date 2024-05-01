@@ -9,4 +9,4 @@
 
 void* reallocate(void* ptr, size_t oldSize, size_t newSize);
 
-#endif //WOOL_MEMORY_H
+#endif
