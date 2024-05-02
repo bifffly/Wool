@@ -7,4 +7,5 @@ add_executable(wool src/main.c src/common.h
     src/chunk.h src/chunk.c
     src/memory.h src/memory.c
     src/debug.h src/debug.c
-    src/value.h src/value.c)
+    src/value.h src/value.c
+    src/vm.h src/vm.c)
