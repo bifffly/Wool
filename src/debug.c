@@ -28,10 +28,13 @@ int debugInstruction(Chunk* chunk, int offset) {
 
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
-        case OP_CONST:
-            return constInstruction("const", chunk, offset);
-        case OP_RET:
-            return simpleInstruction("ret", offset);
+        case OP_ADD: return simpleInstruction("add", offset);
+        case OP_SUB: return simpleInstruction("sub", offset);
+        case OP_MULT: return simpleInstruction("mult", offset);
+        case OP_DIV: return simpleInstruction("div", offset);
+        case OP_NEG: return simpleInstruction("neg", offset);
+        case OP_CONST: return constInstruction("const", chunk, offset);
+        case OP_RET: return simpleInstruction("ret", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;
