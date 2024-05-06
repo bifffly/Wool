@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include "common.h"
 #include "compiler.h"
@@ -7,6 +8,19 @@ VM vm;
 
 static void resetStack() {
     vm.stackTop = vm.stack;
+}
+
+void runtimeError(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    size_t instruction = vm.ip - vm.chunk->code - 1;
+    int line = vm.chunk->lines[instruction];
+    fprintf(stderr, "[line %d] in script\n", line);
+    resetStack();
 }
 
 void initVM() {
@@ -49,24 +63,52 @@ Value pop() {
     return *vm.stackTop;
 }
 
+Value peekStack(int dist) {
+    return vm.stackTop[-1 - dist];
+}
+
+bool isFalsy(Value value) {
+    return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONST() (vm.chunk->consts.values[READ_BYTE()])
-#define BINARY_OP(op) \
+#define BINARY_OP(valType, op) \
     do { \
-        double b = pop(); \
-        double a = pop(); \
-        push(a op b); \
+        if (!IS_NUM(peekStack(0)) || !IS_NUM(peekStack(1))) { \
+            runtimeError("Operands must be numbers."); \
+            return INTERPRET_RUNTIME_ERR; \
+        } \
+        double b = AS_NUM(pop()); \
+        double a = AS_NUM(pop()); \
+        push(valType(a op b)); \
     } while (false)
 
     while (true) {
         switch (READ_BYTE()) {
-            case OP_ADD: BINARY_OP(+); break;
-            case OP_SUB: BINARY_OP(-); break;
-            case OP_MULT: BINARY_OP(*); break;
-            case OP_DIV: BINARY_OP(/); break;
+            case OP_ADD: BINARY_OP(NUM_VAL, +); break;
+            case OP_SUB: BINARY_OP(NUM_VAL, -); break;
+            case OP_MULT: BINARY_OP(NUM_VAL, *); break;
+            case OP_DIV: BINARY_OP(NUM_VAL, /); break;
+            case OP_NULL: push(NULL_VAL); break;
+            case OP_NOT: push(BOOL_VAL(isFalsy(pop()))); break;
+            case OP_TRUE: push(BOOL_VAL(true)); break;
+            case OP_FALSE: push(BOOL_VAL(false)); break;
+            case OP_EQ: {
+                Value b = pop();
+                Value a = pop();
+                push(BOOL_VAL(valuesEqual(a, b)));
+                break;
+            }
+            case OP_GCMP: BINARY_OP(BOOL_VAL, >); break;
+            case OP_LCMP: BINARY_OP(BOOL_VAL, <); break;
             case OP_NEG: {
-                push(-pop());
+                if (!IS_NUM(peekStack(0))) {
+                    runtimeError("Operand must be a number.");
+                    return INTERPRET_RUNTIME_ERR;
+                }
+                push(NUM_VAL(-AS_NUM(pop())));
                 break;
             }
             case OP_CONST: {

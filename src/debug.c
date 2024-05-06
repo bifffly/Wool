@@ -32,6 +32,13 @@ int debugInstruction(Chunk* chunk, int offset) {
         case OP_SUB: return simpleInstruction("sub", offset);
         case OP_MULT: return simpleInstruction("mult", offset);
         case OP_DIV: return simpleInstruction("div", offset);
+        case OP_NULL: return simpleInstruction("null", offset);
+        case OP_NOT: return simpleInstruction("not", offset);
+        case OP_TRUE: return simpleInstruction("true", offset);
+        case OP_FALSE: return simpleInstruction("false", offset);
+        case OP_EQ: return simpleInstruction("eqcmp", offset);
+        case OP_GCMP: return simpleInstruction("gcmp", offset);
+        case OP_LCMP: return simpleInstruction("lcmp", offset);
         case OP_NEG: return simpleInstruction("neg", offset);
         case OP_CONST: return constInstruction("const", chunk, offset);
         case OP_RET: return simpleInstruction("ret", offset);

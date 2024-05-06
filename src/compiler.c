@@ -96,7 +96,17 @@ ParseRule rules[] = {
     [TOK_MINUS] = {unary, binary, PREC_TERM},
     [TOK_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOK_STAR] = {NULL, binary, PREC_FACTOR},
-    [TOK_NUM] = {number, NULL, PREC_NONE}
+    [TOK_BANG] = {unary, NULL, PREC_NONE},
+    [TOK_NUM] = {number, NULL, PREC_NONE},
+    [TOK_TRUE] = {literal, NULL, PREC_NONE},
+    [TOK_FALSE] = {literal, NULL, PREC_NONE},
+    [TOK_NULL] = {literal, NULL, PREC_NONE},
+    [TOK_UNEQ] = {NULL, binary, PREC_EQUALITY},
+    [TOK_EQ] = {NULL, binary, PREC_EQUALITY},
+    [TOK_GT] = {NULL, binary, PREC_COMPARISON},
+    [TOK_GE] = {NULL, binary, PREC_COMPARISON},
+    [TOK_LT] = {NULL, binary, PREC_COMPARISON},
+    [TOK_LE] = {NULL, binary, PREC_COMPARISON},
 };
 
 ParseRule* getRule(TokenType type) {
@@ -120,9 +130,18 @@ void parsePrecedence(Precedence prec) {
     }
 }
 
+void literal() {
+    switch (parser.previous.type) {
+        case TOK_FALSE: emitByte(OP_FALSE); break;
+        case TOK_NULL: emitByte(OP_NULL); break;
+        case TOK_TRUE: emitByte(OP_TRUE); break;
+        default: return;
+    }
+}
+
 void number() {
     double val = strtod(parser.previous.start, NULL);
-    emitConst(val);
+    emitConst(NUM_VAL(val));
 }
 
 void expression() {
@@ -136,6 +155,7 @@ void unary() {
 
     switch (operatorType) {
         case TOK_MINUS: emitByte(OP_NEG); break;
+        case TOK_BANG: emitByte(OP_NOT); break;
         default: return;
     }
 }
@@ -150,6 +170,12 @@ void binary() {
         case TOK_MINUS: emitByte(OP_SUB); break;
         case TOK_STAR: emitByte(OP_MULT); break;
         case TOK_SLASH: emitByte(OP_DIV); break;
+        case TOK_UNEQ: emitBytes(OP_EQ, OP_NOT); break;
+        case TOK_EQ: emitByte(OP_EQ); break;
+        case TOK_GT: emitByte(OP_GCMP); break;
+        case TOK_GE: emitBytes(OP_LCMP, OP_NOT); break;
+        case TOK_LT: emitByte(OP_LCMP); break;
+        case TOK_LE: emitBytes(OP_GCMP, OP_NOT); break;
         default: return;
     }
 }

@@ -33,6 +33,7 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
+void literal();
 void number();
 void expression();
 void unary();
