@@ -12,6 +12,7 @@ struct RefString {
     Ref ref;
     int length;
     char* chars;
+    uint32_t hash;
 };
 
 RefString* copyString(const char* chars, int length);

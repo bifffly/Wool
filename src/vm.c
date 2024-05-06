@@ -28,10 +28,12 @@ void runtimeError(const char* format, ...) {
 
 void initVM() {
     resetStack();
+    initTable(&vm.strings);
     vm.refs = NULL;
 }
 
 void freeVM() {
+    freeTable(&vm.strings);
     freeRefs();
 }
 
