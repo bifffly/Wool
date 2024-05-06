@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "common.h"
+#include "compiler.h"
 #include "vm.h"
 
 VM vm;
@@ -18,6 +19,11 @@ InterpretResult interpretChunk(Chunk* chunk) {
     vm.chunk = chunk;
     vm.ip = vm.chunk->code;
     return run();
+}
+
+InterpretResult interpret(const char* src) {
+    compile(src);
+    return INTERPRET_OK;
 }
 
 void push(Value value) {
