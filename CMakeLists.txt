@@ -10,4 +10,6 @@ add_executable(wool src/main.c src/common.h
     src/value.h src/value.c
     src/vm.h src/vm.c
     src/compiler.h src/compiler.c
-    src/scanner.h src/scanner.c)
+    src/scanner.h src/scanner.c
+    src/ref.h src/ref.c
+    src/refstring.h src/refstring.c)

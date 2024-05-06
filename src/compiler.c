@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "compiler.h"
+#include "refstring.h"
 
 // Helper functions
 
@@ -98,6 +99,7 @@ ParseRule rules[] = {
     [TOK_STAR] = {NULL, binary, PREC_FACTOR},
     [TOK_BANG] = {unary, NULL, PREC_NONE},
     [TOK_NUM] = {number, NULL, PREC_NONE},
+    [TOK_STR] = {string, NULL, PREC_NONE},
     [TOK_TRUE] = {literal, NULL, PREC_NONE},
     [TOK_FALSE] = {literal, NULL, PREC_NONE},
     [TOK_NULL] = {literal, NULL, PREC_NONE},
@@ -142,6 +144,10 @@ void literal() {
 void number() {
     double val = strtod(parser.previous.start, NULL);
     emitConst(NUM_VAL(val));
+}
+
+void string() {
+    emitConst(REF_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
 void expression() {

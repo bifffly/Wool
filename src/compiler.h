@@ -35,6 +35,7 @@ typedef struct {
 
 void literal();
 void number();
+void string();
 void expression();
 void unary();
 void binary();

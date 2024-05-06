@@ -1,7 +1,10 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include "common.h"
 #include "compiler.h"
+#include "memory.h"
+#include "refstring.h"
 #include "vm.h"
 
 VM vm;
@@ -25,9 +28,12 @@ void runtimeError(const char* format, ...) {
 
 void initVM() {
     resetStack();
+    vm.refs = NULL;
 }
 
-void freeVM() {}
+void freeVM() {
+    freeRefs();
+}
 
 InterpretResult interpretChunk(Chunk* chunk) {
     vm.chunk = chunk;
@@ -71,6 +77,20 @@ bool isFalsy(Value value) {
     return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
+void concat() {
+    RefString* b = AS_STRING(pop());
+    RefString* a = AS_STRING(pop());
+
+    int length = a->length + b->length;
+    char* chars = ALLOCATE(char, length + 1);
+    memcpy(chars, a->chars, a->length);
+    memcpy(chars + a->length, b->chars, b->length);
+    chars[length] = '\0';
+
+    RefString* result = takeString(chars, length);
+    push(REF_VAL(result));
+}
+
 InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONST() (vm.chunk->consts.values[READ_BYTE()])
@@ -87,7 +107,19 @@ InterpretResult run() {
 
     while (true) {
         switch (READ_BYTE()) {
-            case OP_ADD: BINARY_OP(NUM_VAL, +); break;
+            case OP_ADD: {
+                if (IS_STRING(peekStack(0)) && IS_STRING(peekStack(1))) {
+                    concat();
+                } else if (IS_NUM(peekStack(0)) && IS_NUM(peekStack(1))) {
+                    double b = AS_NUM(pop());
+                    double a = AS_NUM(pop());
+                    push(NUM_VAL(a + b));
+                } else {
+                    runtimeError("Operands must be both numbers or both strings.");
+                    return INTERPRET_RUNTIME_ERR;
+                }
+                break;
+            }
             case OP_SUB: BINARY_OP(NUM_VAL, -); break;
             case OP_MULT: BINARY_OP(NUM_VAL, *); break;
             case OP_DIV: BINARY_OP(NUM_VAL, /); break;
