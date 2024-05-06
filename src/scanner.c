@@ -127,6 +127,7 @@ TokenType identifierType() {
         case 'i': return check(1, 1, "f", TOK_IF);
         case 'l': return check(1, 2, "et", TOK_LET);
         case 'n': return check(1, 3, "ull", TOK_NULL);
+        case 'r': return check(1, 5, "eturn", TOK_RETURN);
         case 's': return check(1, 5, "truct", TOK_STRUCT);
         case 't': return check(1, 3, "rue", TOK_TRUE);
         case 'w': return check(1, 4, "hile", TOK_WHILE);

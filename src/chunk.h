@@ -10,7 +10,9 @@ typedef enum {
     OP_NULL, OP_NOT,
     OP_TRUE, OP_FALSE,
     OP_EQ, OP_GCMP, OP_LCMP,
-    OP_NEG, OP_CONST, OP_RET
+    OP_NEG, OP_CONST,
+    OP_DEFG, OP_SETG, OP_GETG,
+    OP_POP, OP_RET
 } OpCode;
 
 typedef struct {

@@ -3,6 +3,9 @@
 #include "common.h"
 #include "compiler.h"
 #include "refstring.h"
+#ifdef DEBUG_PRINT_CODE
+#include "debug.h"
+#endif
 
 // Helper functions
 
@@ -50,6 +53,18 @@ void advanceParser() {
     }
 }
 
+bool checkParser(TokenType type) {
+    return parser.current.type == type;
+}
+
+bool matchParser(TokenType type) {
+    if (!checkParser(type)) {
+        return false;
+    }
+    advanceParser();
+    return true;
+}
+
 void consume(TokenType type, const char* msg) {
     if (parser.current.type == type) {
         advanceParser();
@@ -57,6 +72,26 @@ void consume(TokenType type, const char* msg) {
     }
 
     errorAtCurrent(msg);
+}
+
+void synchronize() {
+    parser.panicFlag = false;
+
+    while (parser.current.type != TOK_EOF) {
+        if (parser.previous.type == TOK_SEMICOLON) return;
+        switch (parser.current.type) {
+            case TOK_STRUCT:
+            case TOK_FUNC:
+            case TOK_LET:
+            case TOK_FOR:
+            case TOK_IF:
+            case TOK_WHILE:
+            case TOK_RETURN: return;
+            default:;
+        }
+
+        advanceParser();
+    }
 }
 
 // Emission
@@ -98,6 +133,7 @@ ParseRule rules[] = {
     [TOK_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOK_STAR] = {NULL, binary, PREC_FACTOR},
     [TOK_BANG] = {unary, NULL, PREC_NONE},
+    [TOK_IDENT] = {variable, NULL, PREC_NONE},
     [TOK_NUM] = {number, NULL, PREC_NONE},
     [TOK_STR] = {string, NULL, PREC_NONE},
     [TOK_TRUE] = {literal, NULL, PREC_NONE},
@@ -124,17 +160,41 @@ void parsePrecedence(Precedence prec) {
         return;
     }
 
-    prefixRule();
+    bool canAssign = prec <= PREC_ASSIGNMENT;
+    prefixRule(canAssign);
 
     while (prec <= getRule(parser.current.type)->precedence) {
         advanceParser();
         TokenType prevType = parser.previous.type;
         ParseFn infixRule = getRule(prevType)->infix;
-        infixRule();
+        infixRule(canAssign);
+    }
+
+    if (canAssign && matchParser(TOK_WALRUS)) {
+        error("Invalid assignment target.");
     }
 }
 
-void literal() {
+uint8_t identConst(Token* name) {
+    return makeConst(REF_VAL(copyString(name->start, name->length)));
+}
+
+uint8_t parseVariable(const char* errorMessage) {
+    consume(TOK_IDENT, errorMessage);
+    return identConst(&parser.previous);
+}
+
+void defineVariable(uint8_t global) {
+    emitBytes(OP_DEFG, global);
+}
+
+// Expressions
+
+void expression() {
+    parsePrecedence(PREC_ASSIGNMENT);
+}
+
+void literal(bool canAssign) {
     switch (parser.previous.type) {
         case TOK_FALSE: emitByte(OP_FALSE); break;
         case TOK_NULL: emitByte(OP_NULL); break;
@@ -143,20 +203,30 @@ void literal() {
     }
 }
 
-void number() {
+void namedVariable(Token name, bool canAssign) {
+    uint8_t arg = identConst(&name);
+    if (canAssign && matchParser(TOK_WALRUS)) {
+        expression();
+        emitBytes(OP_SETG, arg);
+    } else {
+        emitBytes(OP_GETG, arg);
+    }
+}
+
+void variable(bool canAssign) {
+    namedVariable(parser.previous, canAssign);
+}
+
+void number(bool canAssign) {
     double val = strtod(parser.previous.start, NULL);
     emitConst(NUM_VAL(val));
 }
 
-void string() {
+void string(bool canAssign) {
     emitConst(REF_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-void expression() {
-    parsePrecedence(PREC_ASSIGNMENT);
-}
-
-void unary() {
+void unary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
 
     parsePrecedence(PREC_UNARY);
@@ -168,7 +238,7 @@ void unary() {
     }
 }
 
-void binary() {
+void binary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence) (rule->precedence + 1));
@@ -188,15 +258,57 @@ void binary() {
     }
 }
 
-void grouping() {
+void grouping(bool canAssign) {
     expression();
     consume(TOK_RIGHT_PAREN, "Expect ')' after expression.");
+}
+
+// Statements
+
+void expressionStatement() {
+    expression();
+    consume(TOK_SEMICOLON, "Expect ';' after expression.");
+    emitByte(OP_POP);
+}
+
+void statement() {
+    expressionStatement();
+
+    if (parser.panicFlag) {
+        synchronize();
+    }
+}
+
+void letDeclaration() {
+    uint8_t global = parseVariable("Expect variable name");
+
+    if (matchParser(TOK_WALRUS)) {
+        expression();
+    } else {
+        emitByte(OP_NULL);
+    }
+    consume(TOK_SEMICOLON, "Expect ';' after variable declaration");
+
+    defineVariable(global);
+}
+
+void declaration() {
+    if (matchParser(TOK_LET)) {
+        letDeclaration();
+    } else {
+        statement();
+    }
 }
 
 // Compilation
 
 void endCompiler() {
     emitReturn();
+#ifdef DEBUG_PRINT_CODE
+    if (!parser.errorFlag) {
+        debugChunk(currentChunk(), "code");
+    }
+#endif
 }
 
 bool compile(const char* source, Chunk* chunk) {
@@ -205,8 +317,9 @@ bool compile(const char* source, Chunk* chunk) {
     parser.errorFlag = false;
 
     advanceParser();
-    expression();
-    consume(TOK_EOF, "Expect end of expression.");
+    while (!matchParser(TOK_EOF)) {
+        declaration();
+    }
     endCompiler();
 
     return !parser.errorFlag;

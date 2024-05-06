@@ -41,6 +41,10 @@ int debugInstruction(Chunk* chunk, int offset) {
         case OP_LCMP: return simpleInstruction("lcmp", offset);
         case OP_NEG: return simpleInstruction("neg", offset);
         case OP_CONST: return constInstruction("const", chunk, offset);
+        case OP_DEFG: return constInstruction("defg", chunk, offset);
+        case OP_SETG: return constInstruction("setg", chunk, offset);
+        case OP_GETG: return constInstruction("getg", chunk, offset);
+        case OP_POP: return simpleInstruction("pop", offset);
         case OP_RET: return simpleInstruction("ret", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
