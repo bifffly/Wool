@@ -109,6 +109,7 @@ ParseRule rules[] = {
     [TOK_GE] = {NULL, binary, PREC_COMPARISON},
     [TOK_LT] = {NULL, binary, PREC_COMPARISON},
     [TOK_LE] = {NULL, binary, PREC_COMPARISON},
+    [TOK_EOF] = {NULL, NULL, PREC_NONE}
 };
 
 ParseRule* getRule(TokenType type) {
@@ -127,7 +128,8 @@ void parsePrecedence(Precedence prec) {
 
     while (prec <= getRule(parser.current.type)->precedence) {
         advanceParser();
-        ParseFn infixRule = getRule(parser.previous.type)->infix;
+        TokenType prevType = parser.previous.type;
+        ParseFn infixRule = getRule(prevType)->infix;
         infixRule();
     }
 }
