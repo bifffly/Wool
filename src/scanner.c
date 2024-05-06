@@ -134,7 +134,7 @@ TokenType identifierType() {
     return TOK_IDENT;
 }
 
-Token string(char delim) {
+Token scanString(char delim) {
     while (peek() != delim && !isAtEnd()) {
         if (peek() == '\n') {
             scanner.line++;
@@ -143,14 +143,14 @@ Token string(char delim) {
     }
 
     if (isAtEnd()) {
-        return errorToken("Unexpected newline within string.");
+        return errorToken("Unexpected newline within scanString.");
     }
 
     advance();
     return makeToken(TOK_STR);
 }
 
-Token number() {
+Token scanNumber() {
     while (isDigit(peek())) {
         advance();
     }
@@ -165,7 +165,7 @@ Token number() {
     return makeToken(TOK_NUM);
 }
 
-Token identifier() {
+Token scanIdentifier() {
     while (isAlpha(peek()) || isDigit(peek())) {
         advance();
     }
@@ -183,10 +183,10 @@ Token scanToken() {
 
     char c = advance();
     if (isDigit(c)) {
-        return number();
+        return scanNumber();
     }
     if (isAlpha(c)) {
-        return identifier();
+        return scanIdentifier();
     }
     switch (c) {
         case '(': return makeToken(TOK_LEFT_PAREN);
@@ -210,7 +210,7 @@ Token scanToken() {
         case '>': return makeToken(match('=') ? TOK_GE : TOK_GT);
         case '<': return makeToken(match('=') ? TOK_LE : match('>') ? TOK_UNEQ : TOK_LT);
         case '\'':
-        case '\"': return string(c);
+        case '\"': return scanString(c);
     }
 
     return errorToken("Unexpected character.");
